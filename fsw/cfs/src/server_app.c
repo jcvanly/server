@@ -37,6 +37,7 @@ void SERVER_AppMain(void)
     if (status != CFE_SUCCESS)
     {
         SERVER_AppData.RunStatus = CFE_ES_RunStatus_APP_ERROR;
+        printf("<<<<<<<<<<<<<< SERVER IS OPERATIONAL >>>>>>>>>>>>>>>\n");
     }
 
     /*
