@@ -37,7 +37,6 @@ void SERVER_AppMain(void)
     if (status != CFE_SUCCESS)
     {
         SERVER_AppData.RunStatus = CFE_ES_RunStatus_APP_ERROR;
-        printf("<<<<<<<<<<<<<< SERVER IS OPERATIONAL >>>>>>>>>>>>>>>\n");
     }
 
     /*
@@ -313,6 +312,15 @@ void SERVER_ProcessGroundCommand(void)
                 SERVER_Disable();
             }
             break;
+
+        case SERVER_HELLO_WORLD_CC:
+            if (SERVER_VerifyCmdLength(SERVER_AppData.MsgPtr, sizeof(SERVER_NoArgs_cmd_t)) == OS_SUCCESS)
+            {
+                CFE_EVS_SendEvent(SERVER_CMD_HELLO_WORLD_EID, CFE_EVS_EventType_INFORMATION, 
+                                  "SERVER: Hello World Command Received");
+            }
+            break;
+        
 
         /*
         ** TODO: Edit and add more command codes as appropriate for the application

@@ -29,6 +29,8 @@
 #define SERVER_CMD_DISABLE_INF_EID       16
 #define SERVER_DISABLE_INF_EID           17
 #define SERVER_DISABLE_ERR_EID           18
+#define SERVER_CMD_HELLO_WORLD_EID       19
+
 
 /* Device specific command event IDs */
 #define SERVER_CMD_CONFIG_INF_EID        20

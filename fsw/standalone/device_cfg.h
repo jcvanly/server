@@ -6,8 +6,8 @@
 */
 #define SERVER_CFG
 /* Note: NOS3 uart requires matching handle and bus number */
-#define SERVER_CFG_STRING           "/dev/usart_16"
-#define SERVER_CFG_HANDLE           16 
+#define SERVER_CFG_STRING           "/dev/usart_28"
+#define SERVER_CFG_HANDLE           28
 #define SERVER_CFG_BAUDRATE_HZ      115200
 #define SERVER_CFG_MS_TIMEOUT       250
 #define SERVER_CFG_DEBUG

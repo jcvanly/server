@@ -22,6 +22,8 @@
 #define SERVER_ENABLE_CC               2
 #define SERVER_DISABLE_CC              3
 #define SERVER_CONFIG_CC               4
+#define SERVER_HELLO_WORLD_CC          5  // Assigning a unique command code
+
 
 
 /* 
