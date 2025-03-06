@@ -26,19 +26,4 @@ TELEMETRY SERVER SERVER_DATA_TLM LITTLE_ENDIAN "SERVER_Device_tlm_t"
   APPEND_ITEM    CCSDS_SPARE          32 UINT         ""
   # SERVER_Device_Data_tlm_t
   APPEND_ITEM    DEVICE_COUNTER       32 UINT         "Reported Device Command Counter"
-  APPEND_ITEM    RAW_SERVER_X         16 UINT         "Raw server data x component (1-65535)"
-  APPEND_ITEM    RAW_SERVER_Y         16 UINT         "Raw server data y component (1-65535)"
-  APPEND_ITEM    RAW_SERVER_Z         16 UINT         "Raw server data z component (1-65535)"
-#  APPEND_ITEM    PAD                  16 UINT         "Because the packed struct it came from has a stride address of 32 and cFS does not serialize"
-  APPEND_ITEM    SERVER_X              0 DERIVED      "Server data unit vector x component (-1.0 to 1.0)"
-    GENERIC_READ_CONVERSION_START FLOAT 32
-      (packet.read("RAW_SERVER_X") - 32768.0)/32767.0
-    GENERIC_READ_CONVERSION_END
-  APPEND_ITEM    SERVER_Y              0 DERIVED      "Server data unit vector y component (-1.0 to 1.0)"
-    GENERIC_READ_CONVERSION_START FLOAT 32
-      (packet.read("RAW_SERVER_Y") - 32768.0)/32767.0
-    GENERIC_READ_CONVERSION_END
-  APPEND_ITEM    SERVER_Z              0 DERIVED      "Server data unit vector z component (-1.0 to 1.0)"
-    GENERIC_READ_CONVERSION_START FLOAT 32
-      (packet.read("RAW_SERVER_Z") - 32768.0)/32767.0
-    GENERIC_READ_CONVERSION_END
+  APPEND_ITEM    SERVER_INT           32 UINT         "Single integer replacing XYZ telemetry"

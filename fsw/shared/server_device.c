@@ -209,66 +209,31 @@ int32_t SERVER_RequestData(uart_info_t* device, SERVER_Device_Data_tlm_t* data)
     int32_t status = OS_SUCCESS;
     uint8_t read_data[SERVER_DEVICE_DATA_SIZE];
 
-    /* Command device to send HK */
+    /* Command device to send data */
     status = SERVER_CommandDevice(device, SERVER_DEVICE_REQ_DATA_CMD, 0);
     if (status == OS_SUCCESS)
     {
-        /* Read HK data */
+        /* Read data */
         status = SERVER_ReadData(device, read_data, sizeof(read_data));
         if (status == OS_SUCCESS)
         {
-            #ifdef SERVER_CFG_DEBUG
-                OS_printf("  SERVER_RequestData = ");
-                for (uint32_t i = 0; i < sizeof(read_data); i++)
-                {
-                    OS_printf("%02x", read_data[i]);
-                }
-                OS_printf("\n");
-            #endif
-
             /* Verify data header and trailer */
             if ((read_data[0]  == SERVER_DEVICE_HDR_0)     && 
                 (read_data[1]  == SERVER_DEVICE_HDR_1)     && 
-                (read_data[12] == SERVER_DEVICE_TRAILER_0) && 
-                (read_data[13] == SERVER_DEVICE_TRAILER_1) )
+                (read_data[10] == SERVER_DEVICE_TRAILER_0) && 
+                (read_data[11] == SERVER_DEVICE_TRAILER_1) )
             {
                 data->DeviceCounter  = read_data[2] << 24;
                 data->DeviceCounter |= read_data[3] << 16;
                 data->DeviceCounter |= read_data[4] << 8;
                 data->DeviceCounter |= read_data[5];
 
-                data->DeviceDataX  = read_data[6] << 8;
-                data->DeviceDataX |= read_data[7];
-
-                data->DeviceDataY  = read_data[8] << 8;
-                data->DeviceDataY |= read_data[9];
-                
-                data->DeviceDataZ  = read_data[10] << 8;
-                data->DeviceDataZ |= read_data[11];
-
-                #ifdef SERVER_CFG_DEBUG
-                    OS_printf("  Header  = 0x%02x%02x  \n", read_data[0], read_data[1]);
-                    OS_printf("  Counter = 0x%08x, %d  \n", data->DeviceCounter, data->DeviceCounter);
-                    OS_printf("  Data X  = 0x%04x, %d  \n", data->DeviceDataX, data->DeviceDataX);
-                    OS_printf("  Data Y  = 0x%04x, %d  \n", data->DeviceDataY, data->DeviceDataY);
-                    OS_printf("  Data Z  = 0x%04x, %d  \n", data->DeviceDataZ, data->DeviceDataZ);
-                    OS_printf("  Trailer = 0x%02x%02x  \n", read_data[12], read_data[13]);
-                #endif
+                data->ServerInt  = read_data[6] << 24;
+                data->ServerInt |= read_data[7] << 16;
+                data->ServerInt |= read_data[8] << 8;
+                data->ServerInt |= read_data[9];
             }
-        } 
-        else
-        {
-            #ifdef SERVER_CFG_DEBUG
-                OS_printf("  SERVER_RequestData: Invalid data read! \n");
-            #endif 
-            status = OS_ERROR;
-        } /* SERVER_ReadData */
-    }
-    else
-    {
-        #ifdef SERVER_CFG_DEBUG
-            OS_printf("  SERVER_RequestData: SERVER_CommandDevice reported error %d \n", status);
-        #endif 
+        }
     }
     return status;
 }

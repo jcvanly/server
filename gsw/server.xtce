@@ -6,29 +6,19 @@
         <xtce:IntegerParameterType name="DEVICE_COUNTER_Type" shortDescription="Reported Device Command Counter" signed="false">
           <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" byteOrder="leastSignificantByteFirst"/>
         </xtce:IntegerParameterType>
-        <xtce:IntegerParameterType name="RAW_SERVER_X_Type" shortDescription="Raw server data x component (1-65535)" signed="false">
-          <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" byteOrder="leastSignificantByteFirst"/>
-        </xtce:IntegerParameterType>
-        <xtce:IntegerParameterType name="RAW_SERVER_Y_Type" shortDescription="Raw server data y component (1-65535)" signed="false">
-          <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" byteOrder="leastSignificantByteFirst"/>
-        </xtce:IntegerParameterType>
-        <xtce:IntegerParameterType name="RAW_SERVER_Z_Type" shortDescription="Raw server data z component (1-65535)" signed="false">
-          <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned" byteOrder="leastSignificantByteFirst"/>
+        <xtce:IntegerParameterType name="SERVER_INT_Type" shortDescription="Single integer replacing XYZ telemetry" signed="false">
+          <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" byteOrder="leastSignificantByteFirst"/>
         </xtce:IntegerParameterType>
       </xtce:ParameterTypeSet>
       <xtce:ParameterSet>
         <xtce:Parameter name="DEVICE_COUNTER" parameterTypeRef="DEVICE_COUNTER_Type"/>
-        <xtce:Parameter name="RAW_SERVER_X" parameterTypeRef="RAW_SERVER_X_Type"/>
-        <xtce:Parameter name="RAW_SERVER_Y" parameterTypeRef="RAW_SERVER_Y_Type"/>
-        <xtce:Parameter name="RAW_SERVER_Z" parameterTypeRef="RAW_SERVER_Z_Type"/>
+        <xtce:Parameter name="SERVER_INT" parameterTypeRef="SERVER_INT_Type"/>
       </xtce:ParameterSet>
       <xtce:ContainerSet>
         <xtce:SequenceContainer name="SERVER_DATA_TLM" shortDescription="SERVER_Device_tlm_t">
           <xtce:EntryList>
             <xtce:ParameterRefEntry parameterRef="DEVICE_COUNTER"/>
-            <xtce:ParameterRefEntry parameterRef="RAW_SERVER_X"/>
-            <xtce:ParameterRefEntry parameterRef="RAW_SERVER_Y"/>
-            <xtce:ParameterRefEntry parameterRef="RAW_SERVER_Z"/>
+            <xtce:ParameterRefEntry parameterRef="SERVER_INT"/>
           </xtce:EntryList>
           <xtce:BaseContainer containerRef="/CCSDS/CCSDS_TM">
             <xtce:RestrictionCriteria>

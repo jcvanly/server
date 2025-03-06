@@ -56,11 +56,10 @@ typedef struct
 typedef struct
 {
     uint32_t  DeviceCounter;
-    uint16_t  DeviceDataX;
-    uint16_t  DeviceDataY;
-    uint16_t  DeviceDataZ;
+    uint32_t  ServerInt;  // New field replacing X, Y, Z
 
 } __attribute__((packed)) SERVER_Device_Data_tlm_t;
+
 #define SERVER_DEVICE_DATA_LNGTH sizeof ( SERVER_Device_Data_tlm_t )
 #define SERVER_DEVICE_DATA_SIZE SERVER_DEVICE_DATA_LNGTH + SERVER_DEVICE_HDR_TRL_LEN
 

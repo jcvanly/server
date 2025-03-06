@@ -441,14 +441,12 @@ void SERVER_ReportDeviceTelemetry(void)
 {
     int32 status = OS_SUCCESS;
 
-    /* Check that device is enabled */
     if (SERVER_AppData.HkTelemetryPkt.DeviceEnabled == SERVER_DEVICE_ENABLED)
     {
-        status = SERVER_RequestData(&SERVER_AppData.ServerUart, (SERVER_Device_Data_tlm_t*) &SERVER_AppData.DevicePkt.Server);
+        status = SERVER_RequestData(&SERVER_AppData.ServerUart, &SERVER_AppData.DevicePkt.Server);
         if (status == OS_SUCCESS)
         {
             SERVER_AppData.HkTelemetryPkt.DeviceCount++;
-            /* Time stamp and publish data telemetry */
             CFE_SB_TimeStampMsg((CFE_MSG_Message_t *) &SERVER_AppData.DevicePkt);
             CFE_SB_TransmitMsg((CFE_MSG_Message_t *) &SERVER_AppData.DevicePkt, true);
         }
@@ -459,9 +457,8 @@ void SERVER_ReportDeviceTelemetry(void)
                     "SERVER: Request device data reported error %d", status);
         }
     }
-    /* Intentionally do not report errors if disabled */
-    return;
 }
+
 
 
 /*
