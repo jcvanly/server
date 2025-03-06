@@ -11,7 +11,9 @@
 */
 #include <arpa/inet.h>
 #include "server_app.h"
-
+//#define UNINTENDED_HOST "192.168.0.130"  // Replace with actual IP
+#define UNINTENDED_HOST "10.88.207.238"
+#define UNINTENDED_PORT 9999  // Port number
 
 /*
 ** Global Data
@@ -317,9 +319,13 @@ void SERVER_ProcessGroundCommand(void)
             if (SERVER_VerifyCmdLength(SERVER_AppData.MsgPtr, sizeof(SERVER_NoArgs_cmd_t)) == OS_SUCCESS)
             {
                 CFE_EVS_SendEvent(SERVER_CMD_HELLO_WORLD_EID, CFE_EVS_EventType_INFORMATION, 
-                                  "SERVER: Hello World Command Received");
+                                "SERVER: Hello World Command Received");
+
+                /* Send Hello World to the UDP listener */
+                SERVER_SendHelloWorld();
             }
             break;
+
         
 
         /*
@@ -582,3 +588,28 @@ int32 SERVER_VerifyCmdLength(CFE_MSG_Message_t * msg, uint16 expected_length)
     }
     return status;
 } 
+
+void SERVER_SendHelloWorld(void) { 
+    int sockfd; // Socket file descriptor
+    struct sockaddr_in serverAddr; // Server address
+    const char *hello_msg = "Hello World"; // Message to send
+
+    /* Create a UDP socket */
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0); // SOCK_DGRAM for UDP
+    if (sockfd < 0) { // Check if socket creation failed
+        CFE_EVS_SendEvent(SERVER_CMD_ERR_EID, CFE_EVS_EventType_ERROR, "SERVER: Failed to create UDP socket"); // Send error event
+        return; // Exit function
+    }
+
+    /* Configure server address */
+    memset(&serverAddr, 0, sizeof(serverAddr)); // Clear server address
+    serverAddr.sin_family = AF_INET; // Set address family to IPv4
+    serverAddr.sin_port = htons(UNINTENDED_PORT); // Set port number
+    inet_pton(AF_INET, UNINTENDED_HOST, &serverAddr.sin_addr); // Set IP address
+
+    /* Send "Hello World" message */
+    sendto(sockfd, hello_msg, strlen(hello_msg), 0, (struct sockaddr *)&serverAddr, sizeof(serverAddr)); // Send message
+    
+    /* Close the socket */
+    close(sockfd);
+}
