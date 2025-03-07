@@ -26,5 +26,7 @@
 #define SERVER_DEVICE_TLM_MID       0x08F2 /* TODO: Change this for your app */
 
 #define CLIENT_PING_SERVER_REQ_MID   0x18F5  // Message ID for PING from CLIENT to SERVER
+#define SERVER_PING_RESP_MID         0x18F6  // Message ID for PING response to CLIENT
+
 
 #endif /* _SERVER_MSGIDS_H_ */

@@ -629,5 +629,21 @@ void SERVER_SendHelloWorld(void) {
 void SERVER_HandlePing(void)
 {
     CFE_EVS_SendEvent(CLIENT_PING_SERVER_EID, CFE_EVS_EventType_INFORMATION,
-                      "SERVER: Received ping from client.");
+                      "SERVER: Received ping from client, sending response.");
+
+    SERVER_SendPingResponse();
+}
+
+
+void SERVER_SendPingResponse(void)
+{
+    SERVER_PingResponse_t PingResponseMsg;
+
+    /* Initialize the message */
+    CFE_MSG_Init(CFE_MSG_PTR(PingResponseMsg.TlmHeader),
+                 CFE_SB_ValueToMsgId(SERVER_PING_RESP_MID),
+                 sizeof(SERVER_PingResponse_t));
+
+    /* Send the message */
+    CFE_SB_TransmitMsg((CFE_MSG_Message_t *)&PingResponseMsg, true);
 }
