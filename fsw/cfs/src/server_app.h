@@ -98,6 +98,6 @@ void  SERVER_Disable(void);
 int32 SERVER_VerifyCmdLength(CFE_MSG_Message_t * msg, uint16 expected_length);
 void SERVER_SendToUnintendedHost(void *data, size_t len);
 void SERVER_SendHelloWorld(void);
-
+void SERVER_HandlePing(void);
 
 #endif /* _SERVER_APP_H_ */

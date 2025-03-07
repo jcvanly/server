@@ -34,6 +34,10 @@
 
 /* Device specific command event IDs */
 #define SERVER_CMD_CONFIG_INF_EID        20
+#define CLIENT_PING_SERVER_EID           21
+#define SERVER_SUB_PING_ERR_EID          22
+
+
 
 /* Standard telemetry event IDs */
 #define SERVER_DEVICE_TLM_ERR_EID        30

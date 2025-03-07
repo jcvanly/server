@@ -25,4 +25,6 @@
 #define SERVER_HK_TLM_MID           0x08F1 /* TODO: Change this for your app */
 #define SERVER_DEVICE_TLM_MID       0x08F2 /* TODO: Change this for your app */
 
+#define CLIENT_PING_SERVER_REQ_MID   0x18F5  // Message ID for PING from CLIENT to SERVER
+
 #endif /* _SERVER_MSGIDS_H_ */

@@ -150,6 +150,16 @@ int32 SERVER_AppInit(void)
         return status;
     }
 
+    status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CLIENT_PING_SERVER_REQ_MID), SERVER_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_EVS_SendEvent(SERVER_SUB_PING_ERR_EID, CFE_EVS_EventType_ERROR,
+            "SERVER: Error subscribing to Client Ping Request, MID=0x%04X, RC=0x%08X",
+            CLIENT_PING_SERVER_REQ_MID, (unsigned int)status);
+        return status;
+    }
+
+
     /*
     ** TODO: Subscribe to any other messages here
     */
@@ -230,6 +240,11 @@ void SERVER_ProcessCommandPacket(void)
         case SERVER_REQ_HK_MID:
             SERVER_ProcessTelemetryRequest();
             break;
+
+        case CLIENT_PING_SERVER_REQ_MID:
+            SERVER_HandlePing();
+            break;
+        
 
         /*
         ** All other invalid messages that this app doesn't recognize, 
@@ -609,4 +624,10 @@ void SERVER_SendHelloWorld(void) {
     
     /* Close the socket */
     close(sockfd);
+}
+
+void SERVER_HandlePing(void)
+{
+    CFE_EVS_SendEvent(CLIENT_PING_SERVER_EID, CFE_EVS_EventType_INFORMATION,
+                      "SERVER: Received ping from client.");
 }
