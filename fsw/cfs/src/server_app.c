@@ -645,5 +645,10 @@ void SERVER_SendPingResponse(void)
                  sizeof(SERVER_PingResponse_t));
 
     /* Send the message */
-    CFE_SB_TransmitMsg((CFE_MSG_Message_t *)&PingResponseMsg, true);
+    int32 status = CFE_SB_TransmitMsg((CFE_MSG_Message_t *)&PingResponseMsg, true);
+
+    /* Log an event indicating the ping response was sent */
+    CFE_EVS_SendEvent(CLIENT_PING_SERVER_EID, CFE_EVS_EventType_INFORMATION,
+                      "SERVER: Sent ping response to client, status = %d", status);
 }
+

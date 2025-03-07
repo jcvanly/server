@@ -88,4 +88,17 @@ typedef struct
 } __attribute__((packed)) SERVER_Hk_tlm_t;
 #define SERVER_HK_TLM_LNGTH sizeof ( SERVER_Hk_tlm_t )
 
+
+/*
+** SERVER Ping Response Telemetry
+*/
+typedef struct
+{
+    CFE_MSG_TelemetryHeader_t TlmHeader;
+    uint32_t Timestamp;  // Optional: Include a timestamp or other relevant data
+
+} __attribute__((packed)) SERVER_PingResponse_t;
+#define SERVER_PING_RESP_LNGTH sizeof (SERVER_PingResponse_t)
+
+
 #endif /* _SERVER_MSG_H_ */
