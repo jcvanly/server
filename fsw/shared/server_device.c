@@ -228,10 +228,10 @@ int32_t SERVER_RequestData(uart_info_t* device, SERVER_Device_Data_tlm_t* data)
                 data->DeviceCounter |= read_data[4] << 8;
                 data->DeviceCounter |= read_data[5];
 
-                data->ServerInt  = read_data[6] << 24;
-                data->ServerInt |= read_data[7] << 16;
-                data->ServerInt |= read_data[8] << 8;
-                data->ServerInt |= read_data[9];
+                data->ServerInt  = read_data[6] << 24; // Takes the byte at index [6] and shifts it 24 bits left to put it in the highest 8 bits.
+                data->ServerInt |= read_data[7] << 16; // Takes byte [7] and shifts it 16 bits left, placing it in the second-highest byte.
+                data->ServerInt |= read_data[8] << 8; // Takes byte [8] and shifts it 8 bits left, placing it in the third-highest byte.
+                data->ServerInt |= read_data[9]; // Takes byte [9] and leaves it as is (since it's already in the least significant position).
             }
         }
     }

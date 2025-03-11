@@ -458,7 +458,7 @@ void SERVER_ReportDeviceTelemetry(void)
 
     if (SERVER_AppData.HkTelemetryPkt.DeviceEnabled == SERVER_DEVICE_ENABLED)
     {
-        status = SERVER_RequestData(&SERVER_AppData.ServerUart, &SERVER_AppData.DevicePkt.Server);
+        status = SERVER_RequestData(&SERVER_AppData.ServerUart, (SERVER_Device_Data_tlm_t*) &SERVER_AppData.DevicePkt.Server);
         if (status == OS_SUCCESS)
         {
             SERVER_AppData.HkTelemetryPkt.DeviceCount++;
@@ -472,6 +472,8 @@ void SERVER_ReportDeviceTelemetry(void)
                     "SERVER: Request device data reported error %d", status);
         }
     }
+
+    return;
 }
 
 

@@ -95,7 +95,7 @@ typedef struct
 typedef struct
 {
     CFE_MSG_TelemetryHeader_t TlmHeader;
-    uint32_t Timestamp;  // Optional: Include a timestamp or other relevant data
+    uint32_t Timestamp;  
 
 } __attribute__((packed)) SERVER_PingResponse_t;
 #define SERVER_PING_RESP_LNGTH sizeof (SERVER_PingResponse_t)
