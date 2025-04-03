@@ -199,7 +199,7 @@ int32 SERVER_AppInit(void)
     SERVER_AppData.HkTelemetryPkt.DeviceHK.DeviceCounter = 0;
     SERVER_AppData.HkTelemetryPkt.DeviceHK.DeviceConfig = 0;
     SERVER_AppData.HkTelemetryPkt.DeviceHK.DeviceStatus = 0;
-
+    
     /* 
      ** Send an information event that the app has initialized. 
      ** This is useful for debugging the loading of individual applications.
@@ -245,6 +245,11 @@ void SERVER_ProcessCommandPacket(void)
             SERVER_HandlePing();
             break;
         
+        case SERVER_CHANGE_INT_MID:
+            SERVER_ProcessGroundCommand();  // or custom handler
+            break;
+
+
 
         /*
         ** All other invalid messages that this app doesn't recognize, 
@@ -341,6 +346,32 @@ void SERVER_ProcessGroundCommand(void)
             }
             break;
 
+            case SERVER_SET_INT_CC:
+            if (SERVER_VerifyCmdLength(SERVER_AppData.MsgPtr, sizeof(SERVER_SetInt_cmd_t)) == OS_SUCCESS)
+            {
+                uint32_t hostVal = ntohl(((SERVER_SetInt_cmd_t*) SERVER_AppData.MsgPtr)->NewValue);
+                SERVER_AppData.ServerInt = hostVal;
+        
+                CFE_EVS_SendEvent(SERVER_SET_SERVER_INT_EID, CFE_EVS_EventType_INFORMATION,
+                                  "SERVER: Received new integer value from client: %u", hostVal);
+        
+                // Send to UART device
+                status = SERVER_CommandDevice(&SERVER_AppData.ServerUart, SERVER_DEVICE_SET_INT_CMD, hostVal);
+                if (status == OS_SUCCESS)
+                {
+                    SERVER_AppData.HkTelemetryPkt.DeviceCount++;
+                }
+                else
+                {
+                    SERVER_AppData.HkTelemetryPkt.DeviceErrorCount++;
+                    CFE_EVS_SendEvent(SERVER_REQ_DATA_ERR_EID, CFE_EVS_EventType_ERROR,
+                                      "SERVER: Failed to send ServerInt to device, status = %d", status);
+                }
+            }
+            break;
+        
+            
+        
         
 
         /*
@@ -458,7 +489,7 @@ void SERVER_ReportDeviceTelemetry(void)
 
     if (SERVER_AppData.HkTelemetryPkt.DeviceEnabled == SERVER_DEVICE_ENABLED)
     {
-        status = SERVER_RequestData(&SERVER_AppData.ServerUart, (SERVER_Device_Data_tlm_t*) &SERVER_AppData.DevicePkt.Server);
+        status = SERVER_RequestData(&SERVER_AppData.ServerUart, &SERVER_AppData.DevicePkt.Server);
         if (status == OS_SUCCESS)
         {
             SERVER_AppData.HkTelemetryPkt.DeviceCount++;
@@ -468,8 +499,6 @@ void SERVER_ReportDeviceTelemetry(void)
         else
         {
             SERVER_AppData.HkTelemetryPkt.DeviceErrorCount++;
-            CFE_EVS_SendEvent(SERVER_REQ_DATA_ERR_EID, CFE_EVS_EventType_ERROR, 
-                    "SERVER: Request device data reported error %d", status);
         }
     }
 
@@ -513,6 +542,12 @@ void SERVER_Enable(void)
         SERVER_AppData.ServerUart.baud = SERVER_CFG_BAUDRATE_HZ;
         SERVER_AppData.ServerUart.access_option = uart_access_flag_RDWR;
 
+        // OS_printf("SERVER UART Config: deviceString=%s, baud=%d, access=%d, handle=%d\n",
+        //     SERVER_AppData.ServerUart.deviceString,
+        //     SERVER_AppData.ServerUart.baud,
+        //     SERVER_AppData.ServerUart.access_option,
+        //     SERVER_AppData.ServerUart.handle);
+
         /* Open device specific protocols */
         status = uart_init_port(&SERVER_AppData.ServerUart);
         if (status == OS_SUCCESS)
@@ -520,6 +555,8 @@ void SERVER_Enable(void)
             SERVER_AppData.HkTelemetryPkt.DeviceCount++;
             SERVER_AppData.HkTelemetryPkt.DeviceEnabled = SERVER_DEVICE_ENABLED;
             CFE_EVS_SendEvent(SERVER_ENABLE_INF_EID, CFE_EVS_EventType_INFORMATION, "SERVER: Device enabled");
+
+            //SERVER_CommandDevice(&SERVER_AppData.ServerUart, SERVER_DEVICE_REQ_HK_CMD, 0);
         }
         else
         {

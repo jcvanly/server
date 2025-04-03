@@ -103,6 +103,10 @@
           <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
           <xtce:ValidRange minInclusive="0" maxInclusive="4294967295"/>
         </xtce:IntegerArgumentType>
+        <xtce:IntegerArgumentType name="NEW_VALUE_Type" initialValue="0" shortDescription="New Integer for Server" signed="false">
+          <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
+          <xtce:ValidRange minInclusive="0" maxInclusive="4294967295"/>
+        </xtce:IntegerArgumentType>
       </xtce:ArgumentTypeSet>
       <xtce:MetaCommandSet>
         <xtce:MetaCommand name="SERVER_REQ_DATA">
@@ -191,6 +195,22 @@
           <xtce:ArgumentList/>
           <xtce:CommandContainer name="SERVER_SERVER_NOOP_CC_CommandContainer">
             <xtce:EntryList/>
+          </xtce:CommandContainer>
+        </xtce:MetaCommand>
+        <xtce:MetaCommand name="SERVER_SET_INT">
+          <xtce:BaseMetaCommand metaCommandRef="/CCSDS/CCSDS_TC">
+            <xtce:ArgumentAssignmentList>
+              <xtce:ArgumentAssignment argumentName="CCSDS_STREAMID" argumentValue="6391"/> <!-- 0x18F7 -->
+              <xtce:ArgumentAssignment argumentName="CCSDS_FC" argumentValue="6"/> <!-- SERVER_SET_INT_CC -->
+            </xtce:ArgumentAssignmentList>
+          </xtce:BaseMetaCommand>
+          <xtce:ArgumentList>
+            <xtce:Argument name="NewValue" argumentTypeRef="NEW_VALUE_Type"/>
+          </xtce:ArgumentList>
+          <xtce:CommandContainer name="SERVER_SERVER_SET_INT_CommandContainer">
+            <xtce:EntryList>
+              <xtce:ArgumentRefEntry argumentRef="NewValue"/>
+            </xtce:EntryList>
           </xtce:CommandContainer>
         </xtce:MetaCommand>
       </xtce:MetaCommandSet>

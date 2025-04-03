@@ -23,7 +23,7 @@
     #define SERVER_CFG_BAUDRATE_HZ      115200
     #define SERVER_CFG_MS_TIMEOUT       50            /* Max 255 */
     /* Note: Debug flag disabled (commented out) by default */
-    #define SERVER_CFG_DEBUG
+    //#define SERVER_CFG_DEBUG
 #endif
 
 #endif /* _SERVER_PLATFORM_CFG_H_ */

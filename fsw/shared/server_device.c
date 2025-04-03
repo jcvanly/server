@@ -22,40 +22,56 @@ int32_t SERVER_ReadData(uart_info_t* device, uint8_t* read_data, uint8_t data_le
     int32_t bytes_available = 0;
     uint8_t ms_timeout_counter = 0;
 
-    /* Wait until all data received or timeout occurs */
-    bytes_available = uart_bytes_available(device);
-    while((bytes_available < data_length) && (ms_timeout_counter < SERVER_CFG_MS_TIMEOUT))
+    #ifdef SERVER_CFG_DEBUG
+        OS_printf("SERVER_ReadData: Waiting for %d bytes from UART...\n", data_length);
+    #endif
+
+    /* Wait until enough data is available or timeout occurs */
+    while ((bytes_available < data_length) && (ms_timeout_counter < SERVER_CFG_MS_TIMEOUT))
     {
-        ms_timeout_counter++;
         OS_TaskDelay(1);
+        ms_timeout_counter++;
         bytes_available = uart_bytes_available(device);
     }
 
-    if (ms_timeout_counter < SERVER_CFG_MS_TIMEOUT)
+    if (ms_timeout_counter >= SERVER_CFG_MS_TIMEOUT)
     {
-        /* Limit bytes available */
-        if (bytes_available > data_length)
-        {
-            bytes_available = data_length;
-        }
-        
-        /* Read data */
-        bytes = uart_read_port(device, read_data, bytes_available);
-        if (bytes != bytes_available)
-        {
-            #ifdef SERVER_CFG_DEBUG
-                OS_printf("  SERVER_ReadData: Bytes read != to requested! \n");
-            #endif
-            status = OS_ERROR;
-        } /* uart_read */
+        #ifdef SERVER_CFG_DEBUG
+            OS_printf("SERVER_ReadData: Timeout waiting for data (got %d of %d)\n", bytes_available, data_length);
+        #endif
+        return OS_ERROR;
     }
-    else
+
+    /* Limit read size to requested length */
+    if (bytes_available > data_length)
     {
+        bytes_available = data_length;
+    }
+
+    /* Read bytes from UART */
+    bytes = uart_read_port(device, read_data, bytes_available);
+
+    #ifdef SERVER_CFG_DEBUG
+        OS_printf("SERVER_ReadData: Requested = %d, Available = %d, Read = %d\n", data_length, bytes_available, bytes);
+        OS_printf("SERVER_ReadData: Data = ");
+        for (int i = 0; i < bytes; ++i)
+        {
+            OS_printf("%02x ", read_data[i]);
+        }
+        OS_printf("\n");
+    #endif
+
+    if (bytes != bytes_available)
+    {
+        #ifdef SERVER_CFG_DEBUG
+            OS_printf("SERVER_ReadData: Bytes read (%d) != bytes available (%d)\n", bytes, bytes_available);
+        #endif
         status = OS_ERROR;
-    } /* ms_timeout_counter */
+    }
 
     return status;
 }
+
 
 
 /* 
@@ -69,63 +85,78 @@ int32_t SERVER_CommandDevice(uart_info_t* device, uint8_t cmd_code, uint32_t pay
     uint8_t write_data[SERVER_DEVICE_CMD_SIZE];
     uint8_t read_data[SERVER_DEVICE_DATA_SIZE];
 
-    /* Prepare command */
+    /* Prepare command packet */
     write_data[0] = SERVER_DEVICE_HDR_0;
     write_data[1] = SERVER_DEVICE_HDR_1;
     write_data[2] = cmd_code;
-    write_data[3] = payload >> 24;
-    write_data[4] = payload >> 16;
-    write_data[5] = payload >> 8;
-    write_data[6] = payload;
+    write_data[3] = (payload >> 24) & 0xFF;
+    write_data[4] = (payload >> 16) & 0xFF;
+    write_data[5] = (payload >> 8)  & 0xFF;
+    write_data[6] = payload & 0xFF;
     write_data[7] = SERVER_DEVICE_TRAILER_0;
     write_data[8] = SERVER_DEVICE_TRAILER_1;
 
-    /* Flush any prior data */
+    #ifdef SERVER_CFG_DEBUG
+        OS_printf("SERVER_CommandDevice: Sending command (code 0x%02X, payload 0x%08X)...\n", cmd_code, payload);
+        OS_printf("  TX Bytes = ");
+        for (uint32_t i = 0; i < SERVER_DEVICE_CMD_SIZE; ++i)
+            OS_printf("%02X ", write_data[i]);
+        OS_printf("\n");
+    #endif
+
+    /* Flush stale data */
     status = uart_flush(device);
-    if (status == UART_SUCCESS)
+    if (status != UART_SUCCESS)
     {
-        /* Write data */
-        bytes = uart_write_port(device, write_data, SERVER_DEVICE_CMD_SIZE);
         #ifdef SERVER_CFG_DEBUG
-            OS_printf("  SERVER_CommandDevice[%d] = ", bytes);
-            for (uint32_t i = 0; i < SERVER_DEVICE_CMD_SIZE; i++)
-            {
-                OS_printf("%02x", write_data[i]);
-            }
-            OS_printf("\n");
+            OS_printf("SERVER_CommandDevice: uart_flush failed, status = %d\n", status);
         #endif
-        if (bytes == SERVER_DEVICE_CMD_SIZE)
-        {
-            status = SERVER_ReadData(device, read_data, SERVER_DEVICE_CMD_SIZE);
-            if (status == OS_SUCCESS)
-            {
-                /* Confirm echoed response */
-                bytes = 0;
-                while ((bytes < (int32_t) SERVER_DEVICE_CMD_SIZE) && (status == OS_SUCCESS))
-                {
-                    if (read_data[bytes] != write_data[bytes])
-                    {
-                        status = OS_ERROR;
-                    }
-                    bytes++;
-                }
-            } /* SERVER_ReadData */
-            else
-            {
-                #ifdef SERVER_CFG_DEBUG
-                    OS_printf("SERVER_CommandDevice - SERVER_ReadData returned %d \n", status);
-                #endif
-            }
-        } 
-        else
+        return status;
+    }
+
+    /* Send command */
+    bytes = uart_write_port(device, write_data, SERVER_DEVICE_CMD_SIZE);
+    if (bytes != SERVER_DEVICE_CMD_SIZE)
+    {
+        #ifdef SERVER_CFG_DEBUG
+            OS_printf("SERVER_CommandDevice: uart_write_port wrote %d bytes, expected %d\n", bytes, SERVER_DEVICE_CMD_SIZE);
+        #endif
+        return OS_ERROR;
+    }
+
+    /* Read and verify echo */
+    status = SERVER_ReadData(device, read_data, SERVER_DEVICE_CMD_SIZE);
+    if (status != OS_SUCCESS)
+    {
+        #ifdef SERVER_CFG_DEBUG
+            OS_printf("SERVER_CommandDevice: SERVER_ReadData failed, status = %d\n", status);
+        #endif
+        return status;
+    }
+
+    #ifdef SERVER_CFG_DEBUG
+        OS_printf("  RX Echo   = ");
+        for (int i = 0; i < SERVER_DEVICE_CMD_SIZE; ++i)
+            OS_printf("%02X ", read_data[i]);
+        OS_printf("\n");
+    #endif
+
+    /* Confirm echoed response matches sent data */
+    for (int i = 0; i < SERVER_DEVICE_CMD_SIZE; ++i)
+    {
+        if (read_data[i] != write_data[i])
         {
             #ifdef SERVER_CFG_DEBUG
-                OS_printf("SERVER_CommandDevice - uart_write_port returned %d, expected %d \n", bytes, SERVER_DEVICE_CMD_SIZE);
+                OS_printf("SERVER_CommandDevice: Mismatch at byte %d (TX: %02X, RX: %02X)\n",
+                          i, write_data[i], read_data[i]);
             #endif
-        } /* uart_write */
-    } /* uart_flush*/
-    return status;
+            return OS_ERROR;
+        }
+    }
+
+    return OS_SUCCESS;
 }
+
 
 
 /*
@@ -228,10 +259,10 @@ int32_t SERVER_RequestData(uart_info_t* device, SERVER_Device_Data_tlm_t* data)
                 data->DeviceCounter |= read_data[4] << 8;
                 data->DeviceCounter |= read_data[5];
 
-                data->ServerInt  = read_data[6] << 24; // Takes the byte at index [6] and shifts it 24 bits left to put it in the highest 8 bits.
-                data->ServerInt |= read_data[7] << 16; // Takes byte [7] and shifts it 16 bits left, placing it in the second-highest byte.
-                data->ServerInt |= read_data[8] << 8; // Takes byte [8] and shifts it 8 bits left, placing it in the third-highest byte.
-                data->ServerInt |= read_data[9]; // Takes byte [9] and leaves it as is (since it's already in the least significant position).
+                data->ServerInt      = read_data[6] << 24;
+                data->ServerInt     |= read_data[7] << 16;
+                data->ServerInt     |= read_data[8] << 8;
+                data->ServerInt     |= read_data[9];
             }
         }
     }

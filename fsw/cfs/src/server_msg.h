@@ -22,7 +22,8 @@
 #define SERVER_ENABLE_CC               2
 #define SERVER_DISABLE_CC              3
 #define SERVER_CONFIG_CC               4
-#define SERVER_HELLO_WORLD_CC          5  // Assigning a unique command code
+#define SERVER_HELLO_WORLD_CC          5
+#define SERVER_SET_INT_CC              6 
 
 
 
@@ -32,6 +33,13 @@
 */
 #define SERVER_REQ_HK_TLM              0
 #define SERVER_REQ_DATA_TLM            1
+
+
+typedef struct
+{
+    CFE_MSG_CommandHeader_t CmdHeader;
+    uint32_t NewValue;
+} __attribute__((packed)) SERVER_SetInt_cmd_t;
 
 
 /*

@@ -6,8 +6,9 @@ namespace Nos3
 
     extern ItcLogger::Logger *sim_logger;
 
-    ServerHardwareModel::ServerHardwareModel(const boost::property_tree::ptree& config) : SimIHardwareModel(config), 
-    _enabled(SERVER_SIM_SUCCESS), _count(0), _config(0), _status(0)
+    ServerHardwareModel::ServerHardwareModel(const boost::property_tree::ptree& config)
+    : SimIHardwareModel(config), _enabled(SERVER_SIM_SUCCESS), _count(0), _config(0), _status(0), _serverInt(0)
+
     {
         /* Get the NOS engine connection string */
         std::string connection_string = config.get("common.nos-connection-string", "tcp://127.0.0.1:12001"); 
@@ -172,51 +173,32 @@ namespace Nos3
     /* Custom function to prepare the Server Data */
     void ServerHardwareModel::create_server_data(std::vector<uint8_t>& out_data)
     {
-        boost::shared_ptr<ServerDataPoint> data_point = boost::dynamic_pointer_cast<ServerDataPoint>(_server_dp->get_data_point());
+        // Prepare data size
+        out_data.resize(12, 0x00);
 
-        /* Prepare data size */
-        out_data.resize(14, 0x00);
-
-        /* Streaming data header - 0xDEAD */
+        // Streaming data header - 0xDEAD
         out_data[0] = 0xDE;
         out_data[1] = 0xAD;
-        
-        /* Sequence count */
-        out_data[2] = (_count >> 24) & 0x000000FF; 
-        out_data[3] = (_count >> 16) & 0x000000FF; 
-        out_data[4] = (_count >>  8) & 0x000000FF; 
-        out_data[5] =  _count & 0x000000FF;
-        
-        /* 
-        ** Payload 
-        ** 
-        ** Device is big engian (most significant byte first)
-        ** Assuming data is valid regardless of dynamic / environmental data
-        ** Floating poing numbers are extremely problematic 
-        **   (https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html)
-        ** Most hardware transmits some type of unsigned integer (e.g. from an ADC), so that's what we've done
-        ** Scale each of the x, y, z (which are in the range [-1.0, 1.0]) by 32767, 
-        **   and add 32768 so that the result fits in a uint16
-        */
-        double dx = data_point->get_server_data_x();
-        double dy = data_point->get_server_data_y();
-        double dz = data_point->get_server_data_z();
-        uint16_t x   = (uint16_t)(dx*32767.0 + 32768.0);
-        out_data[6]  = (x >> 8) & 0x00FF;
-        out_data[7]  =  x       & 0x00FF;
-        uint16_t y   = (uint16_t)(dy*32767.0 + 32768.0);
-        out_data[8]  = (y >> 8) & 0x00FF;
-        out_data[9]  =  y       & 0x00FF;
-        uint16_t z   = (uint16_t)(dz*32767.0 + 32768.0);
-        out_data[10] = (z >> 8) & 0x00FF;
-        out_data[11] =  z       & 0x00FF;
 
-        sim_logger->debug("ServerHardwareModel::create_server_data: data_point=%f, %f, %f, converted values=%u, %u, %u.", dx, dy, dz, x, y, z);
+        // Sequence count
+        out_data[2] = (_count >> 24) & 0xFF;
+        out_data[3] = (_count >> 16) & 0xFF;
+        out_data[4] = (_count >> 8)  & 0xFF;
+        out_data[5] =  _count        & 0xFF;
 
-        /* Streaming data trailer - 0xBEEF */
-        out_data[12] = 0xBE;
-        out_data[13] = 0xEF;
+        // _serverInt payload
+        out_data[6] = (_serverInt >> 24) & 0xFF;
+        out_data[7] = (_serverInt >> 16) & 0xFF;
+        out_data[8] = (_serverInt >> 8)  & 0xFF;
+        out_data[9] =  _serverInt        & 0xFF;
+
+        // Streaming data trailer - 0xBEEF
+        out_data[10] = 0xBE;
+        out_data[11] = 0xEF;
+
+        sim_logger->debug("ServerHardwareModel::create_server_data: _serverInt = %u", _serverInt);
     }
+
 
 
     /* Protocol callback */
@@ -299,6 +281,16 @@ namespace Nos3
                         _config |= in_data[6];
                         break;
                     
+                    case 4:
+                        // SetInt command
+                        sim_logger->debug("ServerHardwareModel::uart_read_callback:  SetInt command received!");
+                        _serverInt  = (in_data[3] << 24);
+                        _serverInt |= (in_data[4] << 16);
+                        _serverInt |= (in_data[5] << 8);
+                        _serverInt |= in_data[6];
+                        sim_logger->info("ServerHardwareModel: SetInt value set to %u", _serverInt);
+                        break;
+
                     default:
                         /* Unused command code */
                         valid = SERVER_SIM_ERROR;

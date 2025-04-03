@@ -38,6 +38,9 @@
 #define SERVER_SUB_PING_ERR_EID          22
 #define CLIENT_SUB_PING_RESP_ERR_EID     23
 #define CLIENT_PING_RESP_EID             24
+#define SERVER_SET_SERVER_INT_EID        25  
+
+
 
 
 /* Standard telemetry event IDs */

@@ -61,7 +61,7 @@ typedef struct
     ** TODO: Make specific to your application
 	*/
     SERVER_Device_tlm_t DevicePkt;      /* Device specific data packet */
-
+    uint32_t ServerInt;
     /* 
     ** Device protocol
     ** TODO: Make specific to your application

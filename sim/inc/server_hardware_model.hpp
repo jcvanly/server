@@ -55,6 +55,8 @@ namespace Nos3
         std::uint32_t                                       _count;
         std::uint32_t                                       _config;
         std::uint32_t                                       _status;
+        std::uint32_t       _serverInt; // For SERVER_SET_INT_CMD (0x04)
+
     };
 }
 
