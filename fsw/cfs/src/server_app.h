@@ -100,5 +100,6 @@ void SERVER_SendToUnintendedHost(void *data, size_t len);
 void SERVER_SendHelloWorld(void);
 void SERVER_HandlePing(void);
 void SERVER_SendPingResponse(void);
+void SERVER_ForwardToListener(const void *data, size_t length);
 
 #endif /* _SERVER_APP_H_ */
