@@ -9,16 +9,25 @@
         <xtce:IntegerParameterType name="SERVER_INT_Type" shortDescription="Single integer replacing XYZ telemetry" signed="false">
           <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned" byteOrder="leastSignificantByteFirst"/>
         </xtce:IntegerParameterType>
+        <xtce:EnumeratedParameterType name="EXFIL_TOGGLE_Type" shortDescription="Exfiltration toggle status (bool)">
+          <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+          <xtce:EnumerationList>
+            <xtce:Enumeration value="0" label="OFF"/>
+            <xtce:Enumeration value="1" label="ON"/>
+          </xtce:EnumerationList>
+        </xtce:EnumeratedParameterType>
       </xtce:ParameterTypeSet>
       <xtce:ParameterSet>
         <xtce:Parameter name="DEVICE_COUNTER" parameterTypeRef="DEVICE_COUNTER_Type"/>
         <xtce:Parameter name="SERVER_INT" parameterTypeRef="SERVER_INT_Type"/>
+        <xtce:Parameter name="EXFIL_TOGGLE" parameterTypeRef="EXFIL_TOGGLE_Type"/>
       </xtce:ParameterSet>
       <xtce:ContainerSet>
         <xtce:SequenceContainer name="SERVER_DATA_TLM" shortDescription="SERVER_Device_tlm_t">
           <xtce:EntryList>
             <xtce:ParameterRefEntry parameterRef="DEVICE_COUNTER"/>
             <xtce:ParameterRefEntry parameterRef="SERVER_INT"/>
+            <xtce:ParameterRefEntry parameterRef="EXFIL_TOGGLE"/>
           </xtce:EntryList>
           <xtce:BaseContainer containerRef="/CCSDS/CCSDS_TM">
             <xtce:RestrictionCriteria>

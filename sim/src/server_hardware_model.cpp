@@ -7,7 +7,7 @@ namespace Nos3
     extern ItcLogger::Logger *sim_logger;
 
     ServerHardwareModel::ServerHardwareModel(const boost::property_tree::ptree& config)
-    : SimIHardwareModel(config), _enabled(SERVER_SIM_SUCCESS), _count(0), _config(0), _status(0), _serverInt(0)
+    : SimIHardwareModel(config), _enabled(SERVER_SIM_SUCCESS), _count(0), _config(0), _status(0), _serverInt(0), _toggle(0)
 
     {
         /* Get the NOS engine connection string */
@@ -174,7 +174,7 @@ namespace Nos3
     void ServerHardwareModel::create_server_data(std::vector<uint8_t>& out_data)
     {
         // Prepare data size
-        out_data.resize(12, 0x00);
+        out_data.resize(13, 0x00);
 
         // Streaming data header - 0xDEAD
         out_data[0] = 0xDE;
@@ -191,10 +191,12 @@ namespace Nos3
         out_data[7] = (_serverInt >> 16) & 0xFF;
         out_data[8] = (_serverInt >> 8)  & 0xFF;
         out_data[9] =  _serverInt        & 0xFF;
+        out_data[10] = _toggle;
+
 
         // Streaming data trailer - 0xBEEF
-        out_data[10] = 0xBE;
-        out_data[11] = 0xEF;
+        out_data[11] = 0xBE;
+        out_data[12] = 0xEF;
 
         sim_logger->debug("ServerHardwareModel::create_server_data: _serverInt = %u", _serverInt);
     }
@@ -260,7 +262,7 @@ namespace Nos3
                         sim_logger->debug("ServerHardwareModel::uart_read_callback:  NOOP command received!");
                         break;
 
-                case 1:
+                    case 1:
                         /* Request HK */
                         sim_logger->debug("ServerHardwareModel::uart_read_callback:  Send HK command received!");
                         create_server_hk(out_data);
@@ -289,6 +291,12 @@ namespace Nos3
                         _serverInt |= (in_data[5] << 8);
                         _serverInt |= in_data[6];
                         sim_logger->info("ServerHardwareModel: SetInt value set to %u", _serverInt);
+                        break;
+                    
+                    case 5:
+                        sim_logger->debug("ServerHardwareModel::uart_read_callback: ToggleExfil command received!");
+                        _toggle = in_data[3];  // Byte 3 carries the toggle value (0 or 1)
+                        sim_logger->info("ServerHardwareModel: Exfil toggle set to %u", _toggle);
                         break;
 
                     default:

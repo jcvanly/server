@@ -251,20 +251,31 @@ int32_t SERVER_RequestData(uart_info_t* device, SERVER_Device_Data_tlm_t* data)
             /* Verify data header and trailer */
             if ((read_data[0]  == SERVER_DEVICE_HDR_0)     && 
                 (read_data[1]  == SERVER_DEVICE_HDR_1)     && 
-                (read_data[10] == SERVER_DEVICE_TRAILER_0) && 
-                (read_data[11] == SERVER_DEVICE_TRAILER_1) )
+                (read_data[11] == SERVER_DEVICE_TRAILER_0) && 
+                (read_data[12] == SERVER_DEVICE_TRAILER_1) )
             {
+                // Parse DeviceCounter
                 data->DeviceCounter  = read_data[2] << 24;
                 data->DeviceCounter |= read_data[3] << 16;
                 data->DeviceCounter |= read_data[4] << 8;
                 data->DeviceCounter |= read_data[5];
 
-                data->ServerInt      = read_data[6] << 24;
-                data->ServerInt     |= read_data[7] << 16;
-                data->ServerInt     |= read_data[8] << 8;
-                data->ServerInt     |= read_data[9];
+                // Parse ServerInt
+                data->ServerInt  = read_data[6] << 24;
+                data->ServerInt |= read_data[7] << 16;
+                data->ServerInt |= read_data[8] << 8;
+                data->ServerInt |= read_data[9];
+
+                // Parse toggle
+                data->toggle = read_data[10];  // Just one byte
+
+            }
+            else
+            {
+                status = OS_ERROR;
             }
         }
     }
     return status;
 }
+

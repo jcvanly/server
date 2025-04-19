@@ -29,6 +29,7 @@
 #define SERVER_DEVICE_REQ_DATA_CMD     0x02
 #define SERVER_DEVICE_CFG_CMD          0x03
 #define SERVER_DEVICE_SET_INT_CMD      0x04  // New command for setting ServerInt
+#define SERVER_TOGGLE_EXFIL_CMD        0x05  // New command for toggling exfiltration
 
 
 #define SERVER_DEVICE_TRAILER          0xBEEF
@@ -59,6 +60,7 @@ typedef struct
 {
     uint32_t  DeviceCounter;
     uint32_t  ServerInt;  // New field replacing X, Y, Z
+    uint8_t  toggle;
 
 } __attribute__((packed)) SERVER_Device_Data_tlm_t;
 

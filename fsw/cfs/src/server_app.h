@@ -62,6 +62,7 @@ typedef struct
 	*/
     SERVER_Device_tlm_t DevicePkt;      /* Device specific data packet */
     uint32_t ServerInt;
+    uint8_t toggle;
     /* 
     ** Device protocol
     ** TODO: Make specific to your application
@@ -101,5 +102,5 @@ void SERVER_SendHelloWorld(void);
 void SERVER_HandlePing(void);
 void SERVER_SendPingResponse(void);
 void SERVER_ForwardToListener(const void *data, size_t length);
-
+void SERVER_HandleToggleExfil(void);
 #endif /* _SERVER_APP_H_ */

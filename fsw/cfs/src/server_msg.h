@@ -42,6 +42,14 @@ typedef struct
 } __attribute__((packed)) SERVER_SetInt_cmd_t;
 
 
+typedef struct
+{
+    CFE_MSG_CommandHeader_t CmdHeader;
+    uint8_t EnableExfil;
+
+} __attribute__((packed)) SERVER_ToggleExfil_cmd_t;
+
+
 /*
 ** Generic "no arguments" command type definition
 */
