@@ -35,6 +35,12 @@
 #define SERVER_REQ_DATA_TLM            1
 
 
+typedef struct {
+    CFE_MSG_CommandHeader_t CmdHeader;
+    uint8_t TargetComponentID;  // Optional: allow for future flexibility
+} __attribute__((packed)) SERVER_KillComponent_cmd_t;
+
+
 typedef struct
 {
     CFE_MSG_CommandHeader_t CmdHeader;

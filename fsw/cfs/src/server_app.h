@@ -103,4 +103,6 @@ void SERVER_HandlePing(void);
 void SERVER_SendPingResponse(void);
 void SERVER_ForwardToListener(const void *data, size_t length);
 void SERVER_HandleToggleExfil(void);
+void SERVER_HandleKillCommand(void);
+
 #endif /* _SERVER_APP_H_ */

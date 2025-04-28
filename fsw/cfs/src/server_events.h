@@ -41,6 +41,7 @@
 #define SERVER_SET_SERVER_INT_EID        25  
 #define SERVER_SUB_TOGGLE_EXFIL_ERR_EID  26 
 #define SERVER_CMD_EXFIL_EID  27  // Next available event ID
+#define SERVER_KILL_COMPONENT_EID 28  // Pick a unique number not used by any other event
 
 
 
